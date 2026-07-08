@@ -1,0 +1,33 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# --- Secrets & config perso ---
+.env
+# fichier personnel Adem, ne pas publier
+context.md
+
+# --- Data locale (le lake vit dans MinIO/ES, pas dans le repo) ---
+data/
+*.parquet
+*.mp3
+*.wav
+
+# --- Airflow ---
+airflow/logs/
+airflow/plugins/
+airflow-webserver.pid
+standalone_admin_password.txt
+
+# --- Docker / volumes ---
+minio_data/
+es_data/
+
+# --- IDE ---
+.idea/
+.vscode/
