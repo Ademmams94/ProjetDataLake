@@ -19,15 +19,16 @@ class Settings(BaseSettings):
     es_host: str = "http://localhost:9200"
     es_index: str = "curated_sentiment"
 
-    # --- API Reddit (source API) ---
-    reddit_client_id: str = ""
-    reddit_client_secret: str = ""
-    reddit_user_agent: str = "datalake-projet-efrei/0.1"
-    reddit_subreddits: str = "technology,france,artificial"
+    # --- API Hacker News (source API, sans authentification) ---
+    hn_base_url: str = "https://hacker-news.firebaseio.com/v0"
+    hn_story_type: str = "topstories"   # topstories | newstories | beststories
+    hn_max_items: int = 50
 
     # --- Dataset fichier (source HuggingFace) ---
-    hf_dataset: str = "tweet_eval"
+    hf_dataset: str = "cardiffnlp/tweet_eval"
     hf_dataset_config: str = "sentiment"
+    hf_split: str = "train"
+    hf_sample_size: int = 500        # nb de lignes chargées (échantillon)
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

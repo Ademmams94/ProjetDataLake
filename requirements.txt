@@ -6,14 +6,14 @@ boto3==1.35.49
 # Manipulation de données
 pandas==2.2.3
 polars==1.12.0
-pyarrow==17.0.0          # lecture/écriture Parquet
+pyarrow==18.1.0          # lecture/écriture Parquet (wheel Python 3.13)
 numpy==2.1.3
 
 # Zone curated : Elasticsearch
 elasticsearch==8.15.1
 
 # Sources de données
-praw==7.8.1              # API Reddit
+# (API Hacker News = simples requêtes HTTP via `requests`, aucune lib dédiée)
 datasets==3.1.0          # datasets HuggingFace
 
 # NLP / sentiment
@@ -25,7 +25,7 @@ uvicorn[standard]==0.32.0
 pydantic-settings==2.6.1
 
 # Niveau avancé : optimisation /ingest_fast
-numba==0.60.0
+numba==0.61.0            # wheel Python 3.13
 
 # Utilitaires
 python-dotenv==1.0.1
