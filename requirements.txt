@@ -17,7 +17,13 @@ elasticsearch==8.15.1
 datasets==3.1.0          # datasets HuggingFace
 
 # NLP / sentiment
-vaderSentiment==3.3.2
+vaderSentiment==3.3.2    # modèle lexical (baseline, rapide)
+
+# Deep Learning : Transformer RoBERTa fine-tuné sur des tweets.
+# Installer torch en version CPU (bien plus léger) :
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch==2.13.0
+transformers==5.13.0
 
 # API Gateway
 fastapi==0.115.4

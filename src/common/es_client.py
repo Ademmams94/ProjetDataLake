@@ -27,8 +27,9 @@ INDEX_MAPPING = {
             "author":        {"type": "keyword"},   # auteur du post (si dispo)
             "text":          {"type": "text"},       # analysé pour la recherche
             "text_clean":    {"type": "text"},
-            "sentiment":     {"type": "keyword"},     # positive / neutral / negative
+            "sentiment":     {"type": "keyword"},     # prédiction du modèle
             "sentiment_score": {"type": "float"},     # score continu [-1, 1]
+            "true_label":    {"type": "keyword"},     # vérité terrain (dataset HF)
             "created_at":    {"type": "date"},
             "ingested_at":   {"type": "date"},
         }

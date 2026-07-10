@@ -19,6 +19,13 @@ class Settings(BaseSettings):
     es_host: str = "http://localhost:9200"
     es_index: str = "curated_sentiment"
 
+    # --- Moteur de sentiment ---
+    # "transformer" = RoBERTa fine-tuné sur tweets (précis, Deep Learning)
+    # "vader"       = lexique + règles (baseline légère, sert de comparaison)
+    sentiment_engine: str = "transformer"
+    sentiment_model: str = "cardiffnlp/twitter-roberta-base-sentiment-latest"
+    sentiment_batch_size: int = 32
+
     # --- API Hacker News (source API, sans authentification) ---
     hn_base_url: str = "https://hacker-news.firebaseio.com/v0"
     hn_story_type: str = "topstories"   # topstories | newstories | beststories
