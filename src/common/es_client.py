@@ -79,3 +79,71 @@ def search(query: dict[str, Any], index: str | None = None,
         return []
     resp = es.search(index=index, query=query, size=size)
     return [hit["_source"] for hit in resp["hits"]["hits"]]
+
+
+def search_documents(q: str | None = None, source: str | None = None,
+                     sentiment: str | None = None, limit: int = 20,
+                     offset: int = 0) -> tuple[int, list[dict[str, Any]]]:
+    """
+    Recherche filtrée et paginée pour l'endpoint /curated.
+
+    Construit une requête booléenne Elasticsearch :
+    - `must`   : la recherche full-text (score de pertinence)
+    - `filter` : les filtres exacts (pas de score, donc mis en cache par ES)
+    Renvoie (nombre total de résultats, page de documents).
+    """
+    es = get_es_client()
+    index = settings.es_index
+    if not es.indices.exists(index=index):
+        return 0, []
+
+    must: list[dict] = []
+    filters: list[dict] = []
+    if q:
+        must.append({"match": {"text": q}})
+    if source:
+        filters.append({"term": {"source": source}})
+    if sentiment:
+        filters.append({"term": {"sentiment": sentiment}})
+
+    query = {"bool": {"must": must or [{"match_all": {}}], "filter": filters}}
+    resp = es.search(index=index, query=query, size=limit, from_=offset,
+                     track_total_hits=True)
+    total = resp["hits"]["total"]["value"]
+    return total, [hit["_source"] for hit in resp["hits"]["hits"]]
+
+
+def cluster_health() -> dict[str, Any]:
+    """État du cluster Elasticsearch (pour /health)."""
+    return dict(get_es_client().cluster.health())
+
+
+def index_stats() -> dict[str, Any]:
+    """
+    Statistiques de la zone CURATED (pour /stats) : volume, taille sur disque,
+    et répartition des sentiments — le tout en une seule requête agrégée.
+    """
+    es = get_es_client()
+    index = settings.es_index
+    if not es.indices.exists(index=index):
+        return {"documents": 0, "size_bytes": 0,
+                "by_sentiment": {}, "by_source": {}, "avg_sentiment_score": None}
+
+    stats = es.indices.stats(index=index)
+    size_bytes = stats["indices"][index]["total"]["store"]["size_in_bytes"]
+
+    resp = es.search(index=index, size=0, aggs={
+        "by_sentiment": {"terms": {"field": "sentiment"}},
+        "by_source": {"terms": {"field": "source"}},
+        "avg_score": {"avg": {"field": "sentiment_score"}},
+    })
+    aggs = resp["aggregations"]
+    return {
+        "documents": resp["hits"]["total"]["value"],
+        "size_bytes": size_bytes,
+        "by_sentiment": {b["key"]: b["doc_count"]
+                         for b in aggs["by_sentiment"]["buckets"]},
+        "by_source": {b["key"]: b["doc_count"]
+                      for b in aggs["by_source"]["buckets"]},
+        "avg_sentiment_score": aggs["avg_score"]["value"],
+    }

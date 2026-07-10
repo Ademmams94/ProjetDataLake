@@ -82,3 +82,40 @@ def list_keys(bucket: str, prefix: str = "") -> Iterator[str]:
 def count_objects(bucket: str, prefix: str = "") -> int:
     """Compte les objets d'un bucket (pour l'endpoint /stats)."""
     return sum(1 for _ in list_keys(bucket, prefix))
+
+
+def list_objects(bucket: str, prefix: str = "") -> list[dict]:
+    """
+    Comme `list_keys`, mais renvoie aussi les métadonnées de chaque objet
+    (taille, date de modification). Utilisé par les endpoints /raw et /stats.
+    """
+    s3 = get_s3_client()
+    paginator = s3.get_paginator("list_objects_v2")
+    objects = []
+    for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
+        for obj in page.get("Contents", []):
+            objects.append({
+                "key": obj["Key"],
+                "size_bytes": obj["Size"],
+                "last_modified": obj["LastModified"].isoformat(),
+            })
+    return objects
+
+
+def object_exists(bucket: str, key: str) -> bool:
+    """Teste l'existence d'un objet sans télécharger son contenu."""
+    from botocore.exceptions import ClientError
+    try:
+        get_s3_client().head_object(Bucket=bucket, Key=key)
+        return True
+    except ClientError:
+        return False
+
+
+def bucket_summary(bucket: str) -> dict:
+    """Résumé d'un bucket : nombre d'objets et volume total."""
+    objects = list_objects(bucket)
+    return {
+        "objects": len(objects),
+        "total_size_bytes": sum(o["size_bytes"] for o in objects),
+    }
