@@ -10,6 +10,7 @@ des bytes (pour le Parquet), et lister les objets d'un bucket.
 """
 import io
 import json
+from functools import lru_cache
 from typing import Any, Iterator
 
 import boto3
@@ -18,8 +19,15 @@ from botocore.client import Config
 from src.common.config import settings
 
 
+@lru_cache(maxsize=1)
 def get_s3_client():
-    """Crée un client boto3 configuré pour MinIO."""
+    """
+    Crée un client boto3 configuré pour MinIO.
+
+    Mis en cache : instancier un client boto3 coûte cher (résolution de la
+    config, chargement des modèles de service). Les clients boto3 sont
+    thread-safe, on peut donc partager la même instance sans risque.
+    """
     return boto3.client(
         "s3",
         endpoint_url=settings.minio_endpoint,

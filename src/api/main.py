@@ -31,7 +31,9 @@ from datetime import datetime, timezone
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import RedirectResponse
+from pydantic import BaseModel, Field, field_validator
 
+from src.api.ingest import ingest_fast, ingest_naive
 from src.common import es_client, s3_client
 from src.common.config import settings
 
@@ -277,3 +279,90 @@ def get_curated(
             "offset": offset, "filters": {"q": q, "source": source,
                                           "sentiment": sentiment},
             "documents": docs}
+
+
+# ===============================================================
+#  NIVEAU AVANCÉ — /ingest et /ingest_fast
+# ===============================================================
+
+class IngestData(BaseModel):
+    """Charge utile : la liste des textes à analyser."""
+    texts: list[str] = Field(..., min_length=1, max_length=1000,
+                             description="Textes à ingérer (1 à 1000)")
+
+    @field_validator("texts")
+    @classmethod
+    def reject_blank_texts(cls, texts: list[str]) -> list[str]:
+        """Un texte vide ne produit aucun sentiment exploitable : on refuse."""
+        cleaned = [t for t in texts if t and t.strip()]
+        if not cleaned:
+            raise ValueError("Aucun texte exploitable : tous sont vides.")
+        return cleaned
+
+
+class IngestRequest(BaseModel):
+    """Structure JSON imposée par le sujet : {"data": {"texts": [...]}}"""
+    data: IngestData
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {"data": {"texts": ["Premier texte à analyser",
+                                           "Deuxième texte à traiter"]}}
+        }
+    }
+
+
+def _ingest_response(result: dict, include_documents: bool) -> dict:
+    """Réponse commune aux deux endpoints (mêmes champs, comparables)."""
+    payload = {
+        "endpoint": result["endpoint"],
+        "ingested": result["ingested"],
+        "elapsed_seconds": result["elapsed_seconds"],
+        "preview": result["documents"][:3],
+    }
+    if include_documents:
+        payload["documents"] = result["documents"]
+    return payload
+
+
+@app.post("/ingest", tags=["ingestion"])
+def post_ingest(
+    request: IngestRequest,
+    include_documents: bool = Query(False, description="Renvoyer tous les documents"),
+):
+    """
+    Ingère un batch de textes à travers tout le pipeline (RAW -> CURATED).
+
+    Implémentation de RÉFÉRENCE : traitement séquentiel, un texte à la fois.
+    Sert de base de comparaison à `/ingest_fast`.
+    """
+    try:
+        result = ingest_naive(request.data.texts)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Échec de l'ingestion (S3 ou Elasticsearch injoignable) : {exc}",
+        ) from exc
+    return _ingest_response(result, include_documents)
+
+
+@app.post("/ingest_fast", tags=["ingestion"])
+def post_ingest_fast(
+    request: IngestRequest,
+    include_documents: bool = Query(False, description="Renvoyer tous les documents"),
+):
+    """
+    Version optimisée de `/ingest` — résultat identique, débit très supérieur.
+
+    Optimisations : inférence par lots, indexation bulk Elasticsearch,
+    écritures S3 parallèles recouvrant le calcul, `torch.inference_mode()`.
+    Détail complet dans `src/api/ingest.py` et `docs/performance.md`.
+    """
+    try:
+        result = ingest_fast(request.data.texts)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Échec de l'ingestion (S3 ou Elasticsearch injoignable) : {exc}",
+        ) from exc
+    return _ingest_response(result, include_documents)
