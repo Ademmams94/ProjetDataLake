@@ -1,22 +1,67 @@
 # ============================================================
-#  Infrastructure du Data Lake (Phase 1)
-#  - MinIO         : stockage objet S3-compatible (zones RAW + STAGING)
-#  - createbuckets : crée automatiquement les buckets au démarrage
-#  - elasticsearch : moteur de la zone CURATED
+#  Data Lake — Infrastructure complète
 #
-#  Airflow et l'API FastAPI seront ajoutés aux phases 5 et 6.
+#  Stockage   : MinIO (zones RAW + STAGING, compatible S3)
+#  Recherche  : Elasticsearch (zone CURATED)
+#  Orchestration : Apache Airflow (Postgres = base de métadonnées)
+#
 #  Démarrage : docker compose up -d
+#  Airflow   : http://localhost:8080  (admin / admin)
+#  MinIO     : http://localhost:9001  (minioadmin / minioadmin123)
 # ============================================================
 
+# Bloc réutilisable partagé par tous les services Airflow (ancre YAML).
+x-airflow-common: &airflow-common
+  build:
+    context: .
+    dockerfile: docker/Dockerfile.airflow
+  image: datalake/airflow:2.10.5
+  environment: &airflow-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+    AIRFLOW__WEBSERVER__SECRET_KEY: datalake-secret-key
+    # Rend notre package `src` importable depuis les DAGs
+    PYTHONPATH: /opt/airflow
+    # Cache HuggingFace persistant : le modèle RoBERTa (~500 Mo) n'est
+    # téléchargé qu'une seule fois, pas à chaque exécution de tâche.
+    HF_HOME: /opt/airflow/hf_cache
+
+    # --- Config de notre data lake ---
+    # ATTENTION : depuis un conteneur, on joint les autres services par leur
+    # NOM DE SERVICE (minio, elasticsearch), pas par localhost.
+    MINIO_ENDPOINT: http://minio:9000
+    MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+    MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+    RAW_BUCKET: ${RAW_BUCKET:-raw}
+    STAGING_BUCKET: ${STAGING_BUCKET:-staging}
+    ES_HOST: http://elasticsearch:9200
+    ES_INDEX: ${ES_INDEX:-curated_sentiment}
+    SENTIMENT_ENGINE: ${SENTIMENT_ENGINE:-transformer}
+    HN_STORY_TYPE: ${HN_STORY_TYPE:-topstories}
+    HN_MAX_ITEMS: ${HN_MAX_ITEMS:-50}
+    HF_DATASET: ${HF_DATASET:-cardiffnlp/tweet_eval}
+    HF_DATASET_CONFIG: ${HF_DATASET_CONFIG:-sentiment}
+    HF_SAMPLE_SIZE: ${HF_SAMPLE_SIZE:-500}
+  volumes:
+    - ./airflow/dags:/opt/airflow/dags
+    - ./airflow/logs:/opt/airflow/logs
+    - ./src:/opt/airflow/src          # notre code, monté en direct
+    - hf_cache:/opt/airflow/hf_cache
+  depends_on:
+    postgres:
+      condition: service_healthy
+
 services:
-  # ---------- Zone RAW + STAGING : stockage objet S3 ----------
+  # ---------- Zones RAW + STAGING : stockage objet S3 ----------
   minio:
     image: minio/minio:latest
     container_name: dl_minio
     command: server /data --console-address ":9001"
     ports:
       - "9000:9000"   # API S3
-      - "9001:9001"   # Console web (http://localhost:9001)
+      - "9001:9001"   # Console web
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
@@ -51,7 +96,7 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false          # pas d'auth : projet local uniquement
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"       # limite la RAM (machine locale)
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"       # limite la RAM
     ports:
       - "9200:9200"
     volumes:
@@ -62,6 +107,68 @@ services:
       timeout: 10s
       retries: 10
 
+  # ---------- Base de métadonnées d'Airflow ----------
+  # Airflow y stocke l'état des DAGs, des tâches, les XCom, etc.
+  postgres:
+    image: postgres:13
+    container_name: dl_postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ---------- Initialisation d'Airflow (migrations + compte admin) ----------
+  # Service éphémère : il s'exécute une fois puis s'arrête.
+  airflow-init:
+    <<: *airflow-common
+    container_name: dl_airflow_init
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate
+        airflow users create \
+          --username admin --password admin \
+          --firstname Admin --lastname User \
+          --role Admin --email admin@example.com || true
+    restart: "no"
+
+  # ---------- Airflow : interface web ----------
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: dl_airflow_web
+    command: webserver
+    ports:
+      - "8080:8080"
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # ---------- Airflow : ordonnanceur (exécute réellement les tâches) ----------
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: dl_airflow_scheduler
+    command: scheduler
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
 volumes:
   minio_data:
   es_data:
+  postgres_data:
+  hf_cache:

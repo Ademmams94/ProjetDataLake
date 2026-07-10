@@ -1,0 +1,27 @@
+# Image Airflow enrichie de nos dépendances de pipeline.
+#
+# Pourquoi une image custom ? Les tâches du DAG exécutent directement notre
+# code (src/), qui a besoin de boto3, pandas, transformers, etc. L'image
+# Airflow officielle ne les contient pas.
+
+FROM apache/airflow:2.10.5-python3.11
+
+# Le cache HuggingFace est monté comme volume nommé. Docker initialise un
+# volume vide avec le propriétaire du dossier tel qu'il existe DANS l'image.
+# Sans ce chown, le volume appartient à root et l'utilisateur `airflow`
+# (uid 50000) ne peut pas y écrire -> PermissionError au téléchargement.
+USER root
+RUN mkdir -p /opt/airflow/hf_cache \
+    && chown -R airflow:root /opt/airflow/hf_cache \
+    && chmod -R g+rw /opt/airflow/hf_cache
+
+USER airflow
+
+# PyTorch en version CPU, installé SÉPARÉMENT et en premier.
+# Le wheel PyPI par défaut embarque les librairies CUDA (~2,5 Go) totalement
+# inutiles ici : l'index dédié "cpu" évite ce poids mort.
+RUN pip install --no-cache-dir \
+    torch==2.13.0 --index-url https://download.pytorch.org/whl/cpu
+
+COPY requirements-airflow.txt /tmp/requirements-airflow.txt
+RUN pip install --no-cache-dir -r /tmp/requirements-airflow.txt

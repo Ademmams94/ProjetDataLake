@@ -1,0 +1,14 @@
+# Dépendances installées DANS l'image Airflow.
+# Volontairement plus restreint que requirements.txt : on n'embarque que ce
+# dont les tâches du DAG ont réellement besoin (pas polars, numba, fastapi…).
+# Une image légère = un build rapide et moins de conflits avec Airflow.
+
+boto3==1.35.49
+pandas==2.2.3
+pyarrow==18.1.0
+elasticsearch==8.15.1
+datasets==3.1.0
+requests==2.32.3
+vaderSentiment==3.3.2
+transformers==5.13.0
+pydantic-settings==2.6.1
