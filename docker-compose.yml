@@ -167,6 +167,36 @@ services:
         condition: service_completed_successfully
     restart: unless-stopped
 
+  # ---------- API Gateway (FastAPI) ----------
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    image: datalake/api:1.0.0
+    container_name: dl_api
+    ports:
+      - "8000:8000"
+    environment:
+      # Adresses inter-conteneurs : par NOM DE SERVICE, pas localhost.
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+      RAW_BUCKET: ${RAW_BUCKET:-raw}
+      STAGING_BUCKET: ${STAGING_BUCKET:-staging}
+      ES_HOST: http://elasticsearch:9200
+      ES_INDEX: ${ES_INDEX:-curated_sentiment}
+      SENTIMENT_ENGINE: ${SENTIMENT_ENGINE:-transformer}
+      HF_HOME: /app/hf_cache
+    volumes:
+      - ./src:/app/src          # code monté en direct (rechargement facile)
+      - hf_cache:/app/hf_cache  # modèle partagé avec Airflow (déjà téléchargé)
+    depends_on:
+      minio:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   minio_data:
   es_data:

@@ -1,0 +1,15 @@
+# Dépendances de l'image de l'API Gateway (FastAPI).
+# Ciblé : uniquement ce que l'API importe réellement à l'exécution.
+# (torch est installé séparément dans le Dockerfile, en version CPU.)
+
+boto3==1.35.49
+pandas==2.2.3
+pyarrow==18.1.0
+numpy==2.1.3
+elasticsearch==8.15.1
+transformers==5.13.0
+vaderSentiment==3.3.2
+fastapi==0.115.4
+uvicorn[standard]==0.32.0
+pydantic-settings==2.6.1
+requests==2.32.3

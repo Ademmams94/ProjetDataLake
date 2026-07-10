@@ -1,0 +1,25 @@
+# Image de l'API Gateway (FastAPI + Uvicorn).
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# PyTorch CPU installé en premier et séparément : l'index dédié évite
+# d'embarquer les ~2,5 Go de librairies CUDA inutiles ici.
+RUN pip install --no-cache-dir \
+    torch==2.13.0 --index-url https://download.pytorch.org/whl/cpu
+
+COPY requirements-api.txt .
+RUN pip install --no-cache-dir -r requirements-api.txt
+
+# Le code source est monté en volume via docker-compose (dev pratique) ;
+# on le copie tout de même pour que l'image soit autonome.
+COPY src ./src
+
+EXPOSE 8000
+
+# Le modèle RoBERTa est mis en cache sur un volume pour ne pas le
+# retélécharger à chaque redémarrage du conteneur.
+ENV HF_HOME=/app/hf_cache
+
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
