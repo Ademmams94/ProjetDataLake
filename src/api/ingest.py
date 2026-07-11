@@ -69,6 +69,7 @@ import hashlib
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+from functools import lru_cache
 
 from src.common import es_client, s3_client
 from src.common.config import settings
@@ -76,6 +77,20 @@ from src.common.nlp import clean_text, score_batch_transformer
 
 # Nombre de threads pour les écritures S3 parallèles (charge I/O, pas CPU).
 S3_WRITE_WORKERS = 16
+
+
+@lru_cache(maxsize=1)
+def _s3_pool() -> ThreadPoolExecutor:
+    """
+    Pool de threads PARTAGÉ, créé une seule fois pour tout le process.
+
+    Créer un ThreadPoolExecutor à chaque requête coûte cher (allocation des
+    threads). Mesuré : sur un batch de 1, ce surcoût annulait entièrement le
+    gain du recouvrement I/O — `/ingest_fast` était devenu plus lent que
+    `/ingest`. Le pool est donc instancié une fois et réutilisé.
+    """
+    return ThreadPoolExecutor(max_workers=S3_WRITE_WORKERS,
+                              thread_name_prefix="s3-write")
 
 
 def _doc_id(text: str) -> str:
@@ -184,7 +199,7 @@ def ingest_fast(texts: list[str]) -> dict:
 
     # --- Optim. 3 + 4 : les écritures RAW partent en tâche de fond,
     #     en parallèle, PENDANT que le modèle calcule le sentiment.
-    pool = ThreadPoolExecutor(max_workers=S3_WRITE_WORKERS)
+    pool = _s3_pool()   # pool partagé : pas de coût de création par requête
     raw_futures = [
         pool.submit(s3_client.put_json, settings.raw_bucket,
                     _raw_key(_doc_id(t), now), _raw_payload(t, now))
@@ -207,9 +222,10 @@ def ingest_fast(texts: list[str]) -> dict:
 
     # On s'assure que les écritures RAW sont bien terminées avant de répondre
     # (et on propage toute exception survenue dans un thread).
+    # Pas de `shutdown()` : le pool est partagé et réutilisé par les requêtes
+    # suivantes. `future.result()` suffit à garantir que tout est écrit.
     for future in raw_futures:
         future.result()
-    pool.shutdown(wait=True)
 
     return {
         "endpoint": "ingest_fast",

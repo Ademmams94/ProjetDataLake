@@ -216,7 +216,7 @@ def rapport_markdown(resultats: dict, repeats: int) -> str:
             "largement dépassé.",
             "",
         ]
-    lignes += [""]
+    lignes += [
         "## Équivalence fonctionnelle",
         "",
         "Un benchmark n'a de sens que si les deux implémentations produisent le",
