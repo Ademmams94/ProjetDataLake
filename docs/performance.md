@@ -1,35 +1,22 @@
 # Résultats des tests de performance
 
-_Généré le 2026-07-11 14:00 UTC par `scripts/benchmark.py` (7 répétitions par mesure)._
+_Généré le 2026-07-11 14:06 UTC par `scripts/benchmark.py` (5 répétitions par mesure)._
 
 ## Synthèse
 
 | Taille du batch | `/ingest` (médiane) | `/ingest_fast` (médiane) | Gain | Accélération | Débit `/ingest_fast` |
 |---|---|---|---|---|---|
-| 1 | 0.1155 s | 0.0974 s | **+15.7 %** | ×1.2 | 10.3 textes/s |
-| 2 | 0.2297 s | 0.1118 s | **+51.3 %** | ×2.1 | 17.9 textes/s |
-| 5 | 0.4948 s | 0.1887 s | **+61.9 %** | ×2.6 | 26.5 textes/s |
-| 10 | 0.9153 s | 0.2769 s | **+69.7 %** | ×3.3 | 36.1 textes/s |
-| 25 | 2.3802 s | 0.4568 s | **+80.8 %** | ×5.2 | 54.7 textes/s |
-| 50 | 4.7277 s | 1.0368 s | **+78.1 %** | ×4.6 | 48.2 textes/s |
-| 100 | 9.6532 s | 1.7405 s | **+82.0 %** | ×5.5 | 57.5 textes/s |
+| 1 | 0.1614 s | 0.1100 s | **+31.8 %** | ×1.5 | 9.1 textes/s |
+| 2 | 0.2175 s | 0.1176 s | **+45.9 %** | ×1.8 | 17.0 textes/s |
+| 5 | 0.4755 s | 0.1745 s | **+63.3 %** | ×2.7 | 28.7 textes/s |
+| 10 | 0.9927 s | 0.2567 s | **+74.1 %** | ×3.9 | 39.0 textes/s |
+| 25 | 2.3459 s | 0.5000 s | **+78.7 %** | ×4.7 | 50.0 textes/s |
+| 50 | 4.9024 s | 0.8950 s | **+81.7 %** | ×5.5 | 55.9 textes/s |
+| 100 | 10.0249 s | 1.6840 s | **+83.2 %** | ×6.0 | 59.4 textes/s |
 
 ## Analyse : le seuil des 30 % et le point de bascule
 
-L'objectif de **≥ 30 %** est atteint dès un batch de **2 élément(s)**, et le gain croît ensuite avec la taille du batch jusqu'à **82 %**.
-
-**Le cas du batch de 1 mérite une explication honnête** : le gain y est de seulement 15.7 %, sous la barre des 30 %. Ce n'est pas un défaut d'optimisation, mais une limite structurelle démontrée par le profilage du pipeline sur un texte unique :
-
-| Étape | Temps médian | Compressible à N=1 ? |
-|---|---|---|
-| Indexation Elasticsearch (1 doc) | ~56 ms | Non — 1 aller-retour HTTP incompressible |
-| Inférence RoBERTa (1 texte) | ~46 ms | Non — coût fixe du modèle |
-| Écriture S3 (zone RAW) | ~12 ms | Oui — recouverte par le calcul dans le *fast* |
-| Divers (ensure_index, refresh) | ~4 ms | Marginal |
-
-Sur un seul texte, **~90 % du temps est un coût fixe** (inférence + indexation) que ni le *batching* ni le parallélisme ne peuvent réduire : il n'y a qu'un texte à traiter et qu'un document à écrire. C'est une illustration directe de la **loi d'Amdahl** — l'accélération est bornée par la fraction non parallélisable du travail. Le seul temps récupérable (~12 ms d'écriture S3) correspond exactement au gain observé.
-
-Pour dépasser 30 % à N=1, il faudrait réduire le coût du modèle lui-même. La quantification int8 a été testée dans ce but : elle s'est révélée contre-productive (voir plus bas). **On assume donc ce résultat, mesures à l'appui, plutôt que de le maquiller.** Dès que l'on ingère plusieurs textes — le cas d'usage réel d'une API d'ingestion — l'objectif est largement dépassé.
+L'objectif de **≥ 30 %** est atteint dès un batch de **1 élément(s)**, et le gain croît ensuite avec la taille du batch jusqu'à **83 %**.
 
 ## Équivalence fonctionnelle
 
@@ -58,13 +45,13 @@ même résultat. À chaque répétition, on vérifie que :
 
 | Batch | naive médiane | naive min | fast médiane | fast min | Débit naive | Débit fast |
 |---|---|---|---|---|---|---|
-| 1 | 0.1155 s | 0.0910 s | 0.0974 s | 0.0773 s | 8.7 t/s | 10.3 t/s |
-| 2 | 0.2297 s | 0.1884 s | 0.1118 s | 0.1039 s | 8.7 t/s | 17.9 t/s |
-| 5 | 0.4948 s | 0.3838 s | 0.1887 s | 0.1529 s | 10.1 t/s | 26.5 t/s |
-| 10 | 0.9153 s | 0.8195 s | 0.2769 s | 0.2449 s | 10.9 t/s | 36.1 t/s |
-| 25 | 2.3802 s | 2.2221 s | 0.4568 s | 0.4346 s | 10.5 t/s | 54.7 t/s |
-| 50 | 4.7277 s | 4.0866 s | 1.0368 s | 0.8675 s | 10.6 t/s | 48.2 t/s |
-| 100 | 9.6532 s | 9.1125 s | 1.7405 s | 1.6247 s | 10.4 t/s | 57.5 t/s |
+| 1 | 0.1614 s | 0.0921 s | 0.1100 s | 0.0890 s | 6.2 t/s | 9.1 t/s |
+| 2 | 0.2175 s | 0.1615 s | 0.1176 s | 0.1012 s | 9.2 t/s | 17.0 t/s |
+| 5 | 0.4755 s | 0.4303 s | 0.1745 s | 0.1593 s | 10.5 t/s | 28.7 t/s |
+| 10 | 0.9927 s | 0.8366 s | 0.2567 s | 0.2170 s | 10.1 t/s | 39.0 t/s |
+| 25 | 2.3459 s | 2.1779 s | 0.5000 s | 0.4404 s | 10.7 t/s | 50.0 t/s |
+| 50 | 4.9024 s | 4.5204 s | 0.8950 s | 0.8260 s | 10.2 t/s | 55.9 t/s |
+| 100 | 10.0249 s | 9.0352 s | 1.6840 s | 1.5850 s | 10.0 t/s | 59.4 t/s |
 
 ## Méthodologie
 

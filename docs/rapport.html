@@ -1,0 +1,1014 @@
+<meta charset="utf-8">
+<title>Rapport de projet — Data Lake &amp; Data Integration</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+
+  :root {
+    --ink:#14181f; --muted:#5b6675; --line:#d8dee7;
+    --accent:#1f4e79; --accent-soft:#eaf1f8; --ok:#1a7f4b; --warn:#a5560c;
+  }
+
+  html { font-size: 10.5pt; }
+  body {
+    font-family: "Segoe UI", "Calibri", system-ui, sans-serif;
+    color: var(--ink); line-height: 1.5; margin:0;
+    text-align: justify; hyphens: auto;
+  }
+
+  /* ---------- Page de garde ---------- */
+  .cover { height: 252mm; display:flex; flex-direction:column;
+           justify-content:center; text-align:center; page-break-after: always; }
+  .cover .school { font-size:11pt; letter-spacing:.16em; text-transform:uppercase;
+                   color:var(--muted); }
+  .cover .rule { width:70px; height:3px; background:var(--accent);
+                 margin:22px auto 26px; }
+  .cover h1 { font-size:27pt; line-height:1.22; margin:0 0 10px; color:var(--accent);
+              border:0; padding:0; }
+  .cover .sub { font-size:13pt; color:var(--muted); margin-bottom:44px; }
+  .cover .meta { font-size:11pt; line-height:1.9; }
+  .cover .meta strong { color:var(--accent); }
+  .badges { margin-top:38px; display:flex; gap:8px; justify-content:center;
+            flex-wrap:wrap; }
+  .badge { border:1px solid var(--line); border-radius:20px; padding:4px 13px;
+           font-size:8.5pt; color:var(--muted); background:#fbfcfe; }
+
+  /* ---------- Titres ---------- */
+  h1 { font-size:16.5pt; color:var(--accent); margin:0 0 16px;
+       padding-bottom:7px; border-bottom:2px solid var(--accent);
+       page-break-before: always; page-break-after: avoid; }
+  h2 { font-size:12.5pt; margin:20px 0 8px; color:#1a2733; page-break-after: avoid; }
+  h3 { font-size:10.8pt; margin:14px 0 5px; color:#2c3a48; page-break-after: avoid; }
+  p { margin: 0 0 9px; }
+  ul, ol { margin:0 0 10px; padding-left:20px; }
+  li { margin-bottom:3px; }
+  code { font-family:"Consolas", monospace; font-size:9pt;
+         background:#eef1f5; padding:1px 4px; border-radius:3px; }
+
+  /* ---------- Tableaux ---------- */
+  table { width:100%; border-collapse:collapse; margin:10px 0 14px;
+          font-size:9pt; page-break-inside:avoid; }
+  th { background:var(--accent); color:#fff; text-align:left;
+       padding:6px 8px; font-weight:600; }
+  td { padding:5px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  tbody tr:nth-child(even) { background:#f7f9fb; }
+  td.num { text-align:right; font-variant-numeric: tabular-nums; }
+  .ok  { color:var(--ok);   font-weight:700; }
+  .bad { color:#b3261e;     font-weight:700; }
+
+  /* ---------- Encadrés ---------- */
+  .box { border-left:3px solid var(--accent); background:var(--accent-soft);
+         padding:9px 13px; margin:12px 0; page-break-inside:avoid; }
+  .box.warn { border-left-color:var(--warn); background:#fdf4ea; }
+  .box.key  { border-left-color:var(--ok);   background:#eef8f2; }
+  .box p:last-child { margin-bottom:0; }
+  .box .lbl { font-weight:700; font-size:8.5pt; text-transform:uppercase;
+              letter-spacing:.08em; display:block; margin-bottom:3px;
+              color:var(--accent); }
+  .box.warn .lbl { color:var(--warn); }
+  .box.key  .lbl { color:var(--ok); }
+
+  /* ---------- Figures ---------- */
+  figure { margin:12px 0 16px; page-break-inside:avoid; text-align:center; }
+  figure img { max-width:100%; border:1px solid var(--line); border-radius:3px; }
+  figcaption { font-size:8.5pt; color:var(--muted); margin-top:5px;
+               text-align:center; font-style:italic; }
+  figcaption b { color:var(--ink); font-style:normal; }
+
+  /* ---------- Sommaire ---------- */
+  .toc { page-break-after: always; }
+  .toc ol { list-style:none; padding-left:0; counter-reset:s; }
+  .toc > ol > li { counter-increment:s; padding:6px 0;
+                   border-bottom:1px dotted var(--line); font-weight:600; }
+  .toc > ol > li::before { content: counter(s) ". "; color:var(--accent); }
+  .toc .an { font-weight:400; color:var(--muted); font-size:9.5pt;
+             padding:4px 0 4px 16px; border:0; }
+
+  .ascii { font-family:"Consolas", monospace; font-size:8pt; line-height:1.35;
+           background:#f7f9fb; border:1px solid var(--line); border-radius:4px;
+           padding:10px; white-space:pre; text-align:left; overflow:hidden;
+           page-break-inside:avoid; margin:10px 0 14px; }
+</style>
+
+<!-- ===================== PAGE DE GARDE ===================== -->
+<div class="cover">
+  <div class="school">EFREI Paris — Année 2025-2026</div>
+  <div class="rule"></div>
+  <h1>Conception et implémentation<br>d'un Data Lake d'analyse de sentiment</h1>
+  <div class="sub">Data Lakes &amp; Data Integration — Projet final</div>
+
+  <div class="meta">
+    <div><strong>Auteur :</strong> Adem Mamouni</div>
+    <div><strong>Spécialité :</strong> Big Data &amp; Machine Learning (4<sup>e</sup> année)</div>
+    <div><strong>Encadrant :</strong> Yvann Vincent</div>
+    <div><strong>Niveau traité :</strong> Standard + Avancé</div>
+  </div>
+
+  <div class="badges">
+    <span class="badge">MinIO (S3)</span>
+    <span class="badge">Elasticsearch</span>
+    <span class="badge">Apache Airflow</span>
+    <span class="badge">FastAPI</span>
+    <span class="badge">RoBERTa</span>
+    <span class="badge">Docker Compose</span>
+  </div>
+</div>
+
+<!-- ===================== SOMMAIRE ===================== -->
+<div class="toc">
+  <h1 style="page-break-before:avoid">Sommaire</h1>
+  <ol>
+    <li>Introduction et objectifs</li>
+    <li>Choix fonctionnels : domaine et sources de données</li>
+    <li>Architecture de la solution</li>
+    <li>Implémentation des trois zones</li>
+    <li>Composante Machine Learning / Deep Learning</li>
+    <li>Orchestration avec Apache Airflow</li>
+    <li>API Gateway</li>
+    <li>Niveau avancé : <code>/ingest</code> et <code>/ingest_fast</code></li>
+    <li>Difficultés rencontrées et résolues</li>
+    <li>Limites et perspectives</li>
+    <li>Conclusion</li>
+  </ol>
+  <div class="an">Annexe A — Procédure d'installation et de build</div>
+  <div class="an">Annexe B — Structure du dépôt</div>
+</div>
+
+<!-- ===================== 1. INTRODUCTION ===================== -->
+<h1>1. Introduction et objectifs</h1>
+
+<h2>1.1 Contexte</h2>
+<p>
+  Ce projet consiste à concevoir et implémenter un <em>data lake</em> complet, de
+  l'ingestion des données jusqu'à leur exposition via une API. L'exercice couvre
+  l'ensemble de la chaîne de valeur d'une plateforme de données moderne :
+  acquisition de sources hétérogènes, raffinage progressif, orchestration
+  reproductible et mise à disposition.
+</p>
+<p>
+  Au-delà des exigences fonctionnelles, l'objectif que nous nous sommes fixé est
+  de produire une solution qui tienne les standards d'un environnement de
+  production : configuration externalisée, gestion d'erreurs explicite,
+  reproductibilité par conteneurisation, et surtout <strong>décisions techniques
+  fondées sur la mesure plutôt que sur l'intuition</strong>. Cette exigence
+  méthodologique constitue le fil conducteur du présent rapport.
+</p>
+
+<h2>1.2 Périmètre traité</h2>
+<p>
+  Le <strong>niveau standard</strong> et le <strong>niveau avancé</strong> ont tous
+  deux été implémentés et validés.
+</p>
+
+<table>
+  <thead>
+    <tr><th style="width:42%">Exigence du sujet</th><th style="width:16%">Statut</th><th>Réalisation</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Data lake en zones distinctes</td><td class="ok">Traité</td><td>Architecture RAW / STAGING / CURATED</td></tr>
+    <tr><td>Zone RAW en S3 ou Elasticsearch</td><td class="ok">Traité</td><td>MinIO, stockage objet compatible S3</td></tr>
+    <tr><td>Deux sources (fichier + API)</td><td class="ok">Traité</td><td>Dataset HuggingFace + API Hacker News</td></tr>
+    <tr><td>Pipelines de transformation</td><td class="ok">Traité</td><td>RAW→STAGING et STAGING→CURATED</td></tr>
+    <tr><td>Pipeline d'intégration (Airflow / DVC)</td><td class="ok">Traité</td><td>DAG Airflow, scheduling horaire, XCom</td></tr>
+    <tr><td>API Gateway (5 endpoints)</td><td class="ok">Traité</td><td>9 endpoints exposés</td></tr>
+    <tr><td>Intégration ML / Deep Learning</td><td class="ok">Traité</td><td>Transformer RoBERTa (75,6 % de précision)</td></tr>
+    <tr><td><em>[Avancé]</em> <code>/ingest</code> et <code>/ingest_fast</code> (≥ 30 %)</td><td class="ok">Traité</td><td>Jusqu'à <strong>+83,2 %</strong> (×6,0)</td></tr>
+  </tbody>
+</table>
+
+<!-- ===================== 2. CHOIX FONCTIONNELS ===================== -->
+<h1>2. Choix fonctionnels : domaine et sources</h1>
+
+<h2>2.1 Domaine applicatif retenu</h2>
+<p>
+  Le sujet laissant une liberté totale sur le choix des données, nous avons retenu
+  l'<strong>analyse de sentiment de texte social</strong> (NLP). Trois raisons ont
+  motivé ce choix :
+</p>
+<ul>
+  <li><strong>Pertinence de la donnée non structurée.</strong> Le texte brut est
+    l'archétype de la donnée qu'un data lake sait valoriser et qu'un entrepôt
+    traditionnel gère mal.</li>
+  <li><strong>Adéquation avec la zone curated.</strong> Le texte enrichi appelle
+    naturellement un moteur de recherche et d'agrégation, ce qui justifie un choix
+    technologique fort plutôt qu'un SGBD par défaut.</li>
+  <li><strong>Support d'une composante Deep Learning.</strong> Le domaine permet
+    d'intégrer un modèle Transformer, explicitement valorisé par le sujet.</li>
+</ul>
+
+<h2>2.2 Les deux sources</h2>
+<table>
+  <thead>
+    <tr><th style="width:22%"></th><th>Source API</th><th>Source fichier</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><b>Fournisseur</b></td><td>Hacker News (API Firebase publique)</td><td>HuggingFace — <code>cardiffnlp/tweet_eval</code></td></tr>
+    <tr><td><b>Nature</b></td><td>Posts technologiques en temps réel</td><td>Tweets annotés en sentiment</td></tr>
+    <tr><td><b>Volume par cycle</b></td><td>50 posts</td><td>500 textes</td></tr>
+    <tr><td><b>Intérêt</b></td><td>Flux vivant, justifie le scheduling</td><td>Fournit une <b>vérité terrain</b></td></tr>
+  </tbody>
+</table>
+
+<div class="box key">
+  <span class="lbl">Décision de conception</span>
+  <p>
+    Le dataset HuggingFace conserve son <strong>label d'origine</strong>
+    (<code>true_label</code>) tout au long du pipeline. Ce choix, en apparence
+    anodin, permet au data lake de <strong>s'auto-évaluer</strong> : à chaque
+    exécution, la précision du modèle est recalculée en confrontant ses
+    prédictions à la vérité terrain. La qualité devient une métrique surveillée,
+    et non une hypothèse.
+  </p>
+</div>
+
+<div class="box warn">
+  <span class="lbl">Incident : fermeture de l'API Reddit</span>
+  <p>
+    La source API initialement retenue était Reddit. En cours de projet, la
+    plateforme a fermé la création d'applications <em>legacy</em>, rendant
+    l'obtention de clés impossible. La couche d'ingestion ayant été conçue pour
+    <strong>découpler la source du reste du pipeline</strong>, la bascule vers
+    Hacker News n'a nécessité la modification que d'un <strong>unique
+    fichier</strong> ; l'architecture, les transformations, l'orchestration et
+    l'API sont restées inchangées. Cet incident valide a posteriori la pertinence
+    du découplage.
+  </p>
+</div>
+
+<!-- ===================== 3. ARCHITECTURE ===================== -->
+<h1>3. Architecture de la solution</h1>
+
+<h2>3.1 Vue d'ensemble</h2>
+<p>
+  Nous avons retenu l'architecture classique en trois zones
+  (<em>medallion</em> : bronze / argent / or), chacune assumant une responsabilité
+  unique et clairement délimitée.
+</p>
+
+<div class="ascii"> SOURCES              ZONE RAW           ZONE STAGING         ZONE CURATED          API
+ ───────              ────────           ────────────         ────────────          ───
+ Hacker News  ─┐      MinIO (S3)         MinIO (S3)           Elasticsearch         FastAPI
+ (API)         ├───►  JSON brut    ───►  Parquet        ───►  documents      ───►   /raw /staging
+ HuggingFace  ─┘      tel quel           nettoyé,             + sentiment           /curated /health
+ (fichier)            partitionné        schéma unifié        (RoBERTa)             /stats /ingest*
+
+                      └──────────── orchestration : Apache Airflow ──────────────┘</div>
+
+<h2>3.2 Justification des choix technologiques</h2>
+<table>
+  <thead>
+    <tr><th style="width:16%">Zone</th><th style="width:22%">Technologie</th><th>Justification</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>RAW</b></td><td>MinIO (S3)</td>
+      <td>Satisfait la contrainte du sujet (S3 ou Elasticsearch). MinIO implémente
+        l'API S3 à l'identique : <strong>le code écrit ici fonctionnerait sur AWS S3
+        sans modification</strong>, seule l'adresse du point d'entrée changeant.
+        Coût nul, exécution locale.</td>
+    </tr>
+    <tr>
+      <td><b>STAGING</b></td><td>Parquet sur MinIO</td>
+      <td>Format <strong>orienté colonne</strong> : compression nettement supérieure au
+        JSON et lectures analytiques accélérées (possibilité de ne lire qu'une
+        colonne). C'est le format de référence de la donnée analytique.</td>
+    </tr>
+    <tr>
+      <td><b>CURATED</b></td><td>Elasticsearch</td>
+      <td>Le domaine étant textuel, la zone finale doit servir deux usages :
+        <strong>recherche full-text</strong> (index inversé) et
+        <strong>agrégations</strong> (sentiment moyen par source, distributions).
+        Elasticsearch répond aux deux en une seule requête, là où un SGBD
+        relationnel serait inadapté au premier.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>3.3 Infrastructure</h2>
+<p>
+  L'intégralité de la solution est décrite dans un unique fichier
+  <code>docker-compose.yml</code> : une seule commande
+  (<code>docker compose up -d --build</code>) démarre les sept services. Cette
+  conteneurisation garantit la <strong>reproductibilité</strong> : la solution se
+  comporte de façon identique sur n'importe quel poste.
+</p>
+
+<figure>
+  <img src="../screenshots/Docker.PNG" alt="Services Docker">
+  <figcaption><b>Figure 1</b> — Les services de la stack : API, Airflow
+    (scheduler, webserver, init), Postgres, MinIO et Elasticsearch, tous
+    opérationnels.</figcaption>
+</figure>
+
+<!-- ===================== 4. IMPLÉMENTATION ===================== -->
+<h1>4. Implémentation des trois zones</h1>
+
+<h2>4.1 Zone RAW — la donnée brute comme source de vérité</h2>
+<p>
+  La zone RAW applique une règle stricte : <strong>la donnée brute n'est jamais
+  modifiée</strong>. Elle est stockée telle que la source la fournit, accompagnée
+  d'une simple enveloppe de métadonnées d'ingestion (source, horodatage, volume).
+  Cette discipline garantit que toute zone en aval reste
+  <strong>entièrement reconstructible</strong> : si la logique de nettoyage évolue,
+  il suffit de rejouer le pipeline depuis le brut.
+</p>
+<p>
+  Les objets sont <strong>partitionnés par source puis par date</strong>. Le
+  partitionnement rend le lac navigable et autorise le re-traitement ciblé d'une
+  journée précise sans relire l'intégralité du volume.
+</p>
+
+<figure>
+  <img src="../screenshots/Bucket.PNG" alt="Bucket raw">
+  <figcaption><b>Figure 2</b> — Bucket <code>raw</code> (1 006 objets) : partitionnement de
+    premier niveau par source (<code>hackernews</code>, <code>huggingface</code>,
+    <code>api</code> pour les ingestions à la demande).</figcaption>
+</figure>
+
+<figure>
+  <img src="../screenshots/partionnenment Hackernews.PNG" alt="Partitionnement par date">
+  <figcaption><b>Figure 3</b> — Partitionnement de second niveau par date, alimenté
+    automatiquement par le scheduling Airflow.</figcaption>
+</figure>
+
+<figure>
+  <img src="../screenshots/partionnenment Hackernews2.PNG" alt="Fichier JSON brut">
+  <figcaption><b>Figure 4</b> — Fichier brut horodaté, contenant le <em>payload</em> JSON
+    intact renvoyé par l'API.</figcaption>
+</figure>
+
+<h2>4.2 Zone STAGING — nettoyage et unification des schémas</h2>
+<p>
+  C'est l'étape d'<strong>intégration</strong> à proprement parler, et le cœur de la
+  problématique posée par le sujet. Un post Hacker News
+  (<code>{id, title, by, score, time}</code>) et un tweet
+  (<code>{text, label}</code>) n'ont aucune structure commune. Un
+  <strong>normaliseur par source</strong>, sélectionné par un aiguillage sur le
+  préfixe de la clé S3, projette chaque enregistrement vers un
+  <strong>schéma unique</strong> :
+</p>
+
+<table>
+  <thead><tr><th style="width:22%">Colonne</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>Identifiant unique et déterministe</td></tr>
+    <tr><td><code>source</code></td><td><code>hackernews</code> | <code>huggingface</code> | <code>api</code></td></tr>
+    <tr><td><code>text</code> / <code>text_clean</code></td><td>Texte d'origine / texte nettoyé</td></tr>
+    <tr><td><code>true_label</code></td><td>Vérité terrain (dataset annoté uniquement)</td></tr>
+    <tr><td><code>created_at</code>, <code>ingested_at</code></td><td>Horodatages normalisés en ISO 8601</td></tr>
+  </tbody>
+</table>
+
+<div class="box">
+  <span class="lbl">Un nettoyage volontairement conservateur</span>
+  <p>
+    La fonction de nettoyage décode les entités HTML, retire les balises et les
+    URLs, puis normalise les espaces. En revanche, elle
+    <strong>ne met pas le texte en minuscules et conserve la ponctuation</strong>.
+    Ce n'est pas un oubli : les modèles de sentiment exploitent les majuscules
+    (emphase) et la ponctuation répétée comme signaux d'intensité. Un nettoyage
+    plus agressif <em>dégraderait</em> la qualité en aval. Le bon prétraitement
+    dépend toujours du traitement qui le suit.
+  </p>
+</div>
+
+<p>
+  Deux garde-fous de robustesse complètent le pipeline : un
+  <strong>dédoublonnage</strong> sur l'identifiant (une ré-ingestion ne duplique
+  pas les données) et l'élimination des enregistrements devenus vides après
+  nettoyage.
+</p>
+
+<figure>
+  <img src="../screenshots/ficher parquet staging.PNG" alt="Fichiers Parquet">
+  <figcaption><b>Figure 5</b> — Zone STAGING : instantanés Parquet compressés (Snappy),
+    partitionnés par date.</figcaption>
+</figure>
+
+<h2>4.3 Zone CURATED — enrichissement et indexation</h2>
+<p>
+  Le dernier pipeline calcule le sentiment de chaque texte, puis indexe les
+  documents enrichis dans Elasticsearch. L'indexation utilise l'identifiant métier
+  comme <code>_id</code> du document, ce qui rend l'opération
+  <strong>idempotente</strong> : rejouer le pipeline met à jour les documents
+  existants au lieu de créer des doublons — propriété indispensable pour une
+  chaîne exécutée toutes les heures.
+</p>
+
+<!-- ===================== 5. ML / DL ===================== -->
+<h1>5. Composante Machine Learning / Deep Learning</h1>
+
+<h2>5.1 Une première approche insuffisante : VADER</h2>
+<p>
+  Le premier moteur implémenté fut <strong>VADER</strong>, un modèle à base de
+  lexique et de règles, conçu pour le texte social. Rapide et déterministe, il
+  présente néanmoins une précision décevante de <strong>52,8 %</strong> sur nos
+  500 textes annotés — à peine au-dessus d'une classification naïve.
+</p>
+<p>
+  Plutôt que d'accepter ce chiffre, nous avons <strong>diagnostiqué</strong> en
+  construisant la matrice de confusion :
+</p>
+
+<table>
+  <thead><tr><th>Classe</th><th class="num">Vérité terrain</th><th class="num">Prédictions VADER</th><th>Diagnostic</th></tr></thead>
+  <tbody>
+    <tr><td>neutral</td><td class="num">217</td><td class="num">143</td><td>fortement sous-prédite</td></tr>
+    <tr><td>positive</td><td class="num">200</td><td class="num">246</td><td>sur-prédite</td></tr>
+    <tr><td>negative</td><td class="num">83</td><td class="num">111</td><td>sur-prédite</td></tr>
+  </tbody>
+</table>
+
+<p>
+  Le modèle bascule trop facilement hors du neutre : ses seuils par défaut
+  (±0,05) sont trop étroits. Un élargissement de la bande neutre porte la
+  précision à 58,6 %, mais nous avons
+  <strong>rejeté ce résultat pour des raisons méthodologiques</strong> : le seuil
+  optimal avait été recherché sur les données mêmes qui servaient à l'évaluer,
+  ce qui constitue un <em>surapprentissage</em> et produit un chiffre non
+  généralisable. VADER reste conservé comme <strong>baseline de comparaison</strong>.
+</p>
+
+<h2>5.2 Le modèle retenu : Transformer RoBERTa</h2>
+<p>
+  La limite de VADER est structurelle : un modèle lexical ne comprend ni le
+  contexte, ni la négation complexe, ni le sarcasme. Nous avons donc intégré
+  <strong><code>cardiffnlp/twitter-roberta-base-sentiment-latest</code></strong>,
+  un Transformer RoBERTa pré-entraîné sur environ 124 millions de tweets puis
+  spécialisé sur la tâche de sentiment à trois classes.
+</p>
+
+<table>
+  <thead>
+    <tr><th>Moteur</th><th>Nature</th><th class="num">Précision</th><th>Rappel par classe (nég. / neu. / pos.)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><em>Baseline « tout neutre »</em></td><td>—</td><td class="num">43,4 %</td><td>—</td></tr>
+    <tr><td>VADER</td><td>Lexique + règles</td><td class="num">52,8 %</td><td>déséquilibré</td></tr>
+    <tr><td><b>RoBERTa</b></td><td>Transformer (Deep Learning)</td><td class="num ok">75,6 %</td><td>0,77 / 0,76 / 0,75</td></tr>
+  </tbody>
+</table>
+
+<div class="box key">
+  <span class="lbl">Lecture des résultats</span>
+  <p>
+    Le gain de <strong>+22,8 points</strong> n'est pas le seul enseignement : le
+    <strong>rappel par classe est équilibré</strong> (0,77 / 0,76 / 0,75). Le modèle
+    ne sacrifie aucune classe pour gonfler sa précision globale — un piège fréquent
+    que seule une métrique désagrégée permet de détecter.
+  </p>
+</div>
+
+<p>
+  Le moteur est <strong>pilotable par configuration</strong>
+  (<code>SENTIMENT_ENGINE=transformer|vader</code>), ce qui permet de basculer
+  entre les deux sans modifier une ligne de code des pipelines.
+</p>
+
+<!-- ===================== 6. AIRFLOW ===================== -->
+<h1>6. Orchestration avec Apache Airflow</h1>
+
+<h2>6.1 Structure du DAG</h2>
+<p>
+  Airflow a été préféré à DVC car il apporte, en plus de la reproductibilité, le
+  <strong>scheduling</strong> requis pour ingérer l'API à intervalle régulier ainsi
+  qu'une interface de supervision — un profil bien plus proche d'un usage de
+  production.
+</p>
+<p>
+  Le DAG <code>datalake_pipeline</code> enchaîne cinq tâches. Les deux ingestions,
+  indépendantes, s'exécutent <strong>en parallèle</strong> ; la transformation
+  attend leur convergence (<em>fan-in</em>).
+</p>
+
+<figure>
+  <img src="../screenshots/Graphe des taches.PNG" alt="Graphe du DAG">
+  <figcaption><b>Figure 6</b> — Graphe du DAG : parallélisation des deux ingestions, puis
+    chaîne de raffinage séquentielle. Le <em>scheduling</em> horaire est visible en
+    haut à droite.</figcaption>
+</figure>
+
+<h2>6.2 Fiabilité et communication inter-tâches</h2>
+<ul>
+  <li><strong>Scheduling horaire</strong> : le lac s'alimente en continu depuis
+    l'API, sans intervention.</li>
+  <li><strong>Reprise sur erreur</strong> : chaque tâche dispose de
+    <code>retries=2</code> et d'un <code>execution_timeout</code>, afin d'absorber
+    une indisponibilité transitoire de l'API.</li>
+  <li><strong>XCom</strong> : la tâche <code>report</code> récupère les valeurs de
+    retour des tâches amont pour produire une synthèse de cycle, incluant les
+    métriques de qualité du modèle.</li>
+</ul>
+
+<div class="box">
+  <span class="lbl">Point d'implémentation</span>
+  <p>
+    Les imports de notre code sont effectués <strong>à l'intérieur des fonctions</strong>
+    et non en tête du fichier de DAG. Airflow ré-analyse en effet tous les fichiers
+    de DAG toutes les trente secondes : importer PyTorch à chaque analyse
+    saturerait le <em>scheduler</em>. Un fichier de DAG doit se parser en moins
+    d'une seconde.
+  </p>
+</div>
+
+<figure>
+  <img src="../screenshots/logs report.PNG" alt="Log de la tâche report">
+  <figcaption><b>Figure 7</b> — Rapport de cycle construit à partir des XCom : volumes
+    ingérés par source, dédoublonnage, distribution des sentiments et
+    <strong>précision du modèle recalculée à chaque exécution</strong>.</figcaption>
+</figure>
+
+<div class="box key">
+  <span class="lbl">Preuve du dédoublonnage</span>
+  <p>
+    Ce rapport constitue une validation opérationnelle : après plusieurs cycles, la
+    source HuggingFace reste stable à <strong>500 textes</strong> (identifiants
+    déterministes, donc dédoublonnés), tandis que Hacker News croît à
+    <strong>180 posts</strong> — les <em>top stories</em> ayant réellement changé
+    entre les exécutions. Le comportement incrémental attendu est vérifié.
+  </p>
+</div>
+
+<figure>
+  <img src="../screenshots/Historique runs.PNG" alt="Historique des runs">
+  <figcaption><b>Figure 8</b> — Historique des exécutions. Les échecs initiaux (en rouge)
+    correspondent aux incidents documentés en section 9, résolus depuis.</figcaption>
+</figure>
+
+<!-- ===================== 7. API ===================== -->
+<h1>7. API Gateway</h1>
+
+<p>
+  FastAPI a été retenu pour son asynchronisme natif, sa validation déclarative par
+  Pydantic et sa documentation OpenAPI générée automatiquement. L'API expose
+  <strong>neuf endpoints</strong> — les cinq exigés, complétés par quatre endpoints
+  additionnels.
+</p>
+
+<figure>
+  <img src="../screenshots/Liste endpoints.PNG" alt="Endpoints de l'API">
+  <figcaption><b>Figure 9</b> — Documentation OpenAPI auto-générée, regroupée par domaine
+    fonctionnel : supervision, zones du lac, ingestion.</figcaption>
+</figure>
+
+<table>
+  <thead><tr><th style="width:26%">Endpoint</th><th>Rôle</th></tr></thead>
+  <tbody>
+    <tr><td><code>GET /health</code></td><td>État des services ; renvoie <strong>503</strong> si un composant est injoignable</td></tr>
+    <tr><td><code>GET /stats</code></td><td>Volumétrie des trois zones : objets, octets, documents, distribution</td></tr>
+    <tr><td><code>GET /raw</code>, <code>/raw/object</code></td><td>Listing des objets bruts et lecture d'un objet</td></tr>
+    <tr><td><code>GET /staging</code>, <code>/staging/files</code></td><td>Lecture des instantanés Parquet, filtrable par source</td></tr>
+    <tr><td><code>GET /curated</code></td><td>Recherche full-text + filtres exacts + pagination</td></tr>
+    <tr><td><code>POST /ingest</code>, <code>/ingest_fast</code></td><td><em>[Avancé]</em> Ingestion à la demande — voir section 8</td></tr>
+  </tbody>
+</table>
+
+<h2>7.1 Supervision : /health et /stats</h2>
+<p>
+  L'endpoint <code>/health</code> respecte la convention attendue par les sondes
+  d'infrastructure : le <strong>code HTTP</strong> porte le verdict (200 ou 503), et
+  non uniquement le corps de la réponse.
+</p>
+
+<figure>
+  <img src="../screenshots/Get stats.PNG" alt="Endpoint /stats">
+  <figcaption><b>Figure 10</b> — <code>/stats</code> : volumétrie consolidée des trois zones,
+    avec ventilation par source et par sentiment obtenue via une agrégation
+    Elasticsearch.</figcaption>
+</figure>
+
+<h2>7.2 Exploitation : /curated</h2>
+<p>
+  L'endpoint <code>/curated</code> combine une requête booléenne Elasticsearch
+  (<code>must</code> pour le full-text scoré, <code>filter</code> pour les filtres
+  exacts — ces derniers étant mis en cache par le moteur) avec une pagination.
+</p>
+
+<figure>
+  <img src="../screenshots/Get curated.PNG" alt="Endpoint /curated">
+  <figcaption><b>Figure 11</b> — Requête croisant recherche full-text
+    (<code>q=AI</code>) et filtre de sentiment (<code>negative</code>). Les résultats
+    sont sémantiquement cohérents : « <em>Guy is banned by OpenAI for cyber
+    abuse</em> », « <em>What's slowing down the AI buildout</em> ».</figcaption>
+</figure>
+
+<h2>7.3 Gestion des erreurs</h2>
+<p>
+  Un soin particulier a été porté aux cas d'erreur, critère explicite d'évaluation.
+  Les codes HTTP sont respectés et les messages sont <strong>actionnables</strong> :
+</p>
+<table>
+  <thead><tr><th style="width:10%">Code</th><th style="width:30%">Situation</th><th>Message renvoyé</th></tr></thead>
+  <tbody>
+    <tr><td><b>422</b></td><td>Valeur non valide</td><td><em>« Sentiment invalide : 'heureux'. Valeurs acceptées : negative, neutral, positive. »</em></td></tr>
+    <tr><td><b>404</b></td><td>Ressource inexistante</td><td><em>« Aucun objet brut pour la source 'twitter'. Sources valides : hackernews, huggingface. »</em></td></tr>
+    <tr><td><b>503</b></td><td>Service injoignable</td><td>Identification du composant défaillant (MinIO ou Elasticsearch)</td></tr>
+  </tbody>
+</table>
+
+<!-- ===================== 8. NIVEAU AVANCÉ ===================== -->
+<h1>8. Niveau avancé : /ingest et /ingest_fast</h1>
+
+<p>
+  Le niveau avancé exige un endpoint d'ingestion propageant des textes à travers
+  tout le pipeline, ainsi qu'une variante optimisée offrant au minimum
+  <strong>30 % de gain</strong>. Les deux traversent l'intégralité de la chaîne :
+  écriture en zone RAW, scoring, indexation en zone CURATED.
+</p>
+
+<figure>
+  <img src="../screenshots/Ingest fast 1.PNG" alt="Requête /ingest_fast">
+  <figcaption><b>Figure 12</b> — <code>/ingest_fast</code> : structure JSON conforme à
+    celle imposée par le sujet.</figcaption>
+</figure>
+
+<figure>
+  <img src="../screenshots/Ingest fast 2.PNG" alt="Réponse /ingest_fast">
+  <figcaption><b>Figure 13</b> — Réponse : documents enrichis (sentiment, score) et
+    <code>elapsed_seconds</code> chronométré côté serveur.</figcaption>
+</figure>
+
+<h2>8.1 Prérequis méthodologique : l'équivalence fonctionnelle</h2>
+<div class="box key">
+  <span class="lbl">Un benchmark n'a de sens que si les résultats sont identiques</span>
+  <p>
+    Avant toute mesure de temps, chaque répétition vérifie que les deux endpoints
+    produisent le même résultat : identifiants identiques, <strong>labels de
+    sentiment rigoureusement identiques</strong>, scores coïncidant à
+    <code>1e-5</code> près.
+  </p>
+  <p>
+    <strong>Pourquoi une tolérance et non une égalité stricte ?</strong> En mode
+    <em>batch</em>, les textes sont complétés (<em>padding</em>) à une longueur
+    commune et les multiplications matricielles s'exécutent dans un ordre différent.
+    Or l'addition en virgule flottante n'est <strong>pas associative</strong> :
+    <code>(a+b)+c ≠ a+(b+c)</code> au bit près. L'écart observé, de l'ordre de
+    <code>1e-7</code>, est un bruit numérique inhérent au batching — et non un
+    défaut de correction.
+  </p>
+</div>
+
+<h2>8.2 Optimisations mises en œuvre</h2>
+<table>
+  <thead><tr><th style="width:4%">#</th><th style="width:28%">Optimisation</th><th>Principe et effet</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><b>Inférence par lots</b></td>
+      <td>Le gain dominant. L'implémentation naïve effectue N passes du Transformer ;
+        la version optimisée empile les N textes dans un seul tenseur et exploite les
+        multiplications matricielles vectorisées. Une seule passe.</td></tr>
+    <tr><td>2</td><td><b>Indexation <code>_bulk</code></b></td>
+      <td>Un unique aller-retour HTTP vers Elasticsearch au lieu de N indexations
+        unitaires.</td></tr>
+    <tr><td>3</td><td><b>Écritures S3 parallèles</b></td>
+      <td>Les N écritures en zone RAW sont indépendantes et limitées par les
+        entrées/sorties : un pool de threads les recouvre.</td></tr>
+    <tr><td>4</td><td><b>Recouvrement I/O ↔ calcul</b></td>
+      <td>Les écritures RAW ne dépendent pas du scoring : elles sont lancées en tâche
+        de fond <em>pendant</em> l'inférence. Leur coût devient quasi invisible.</td></tr>
+    <tr><td>5</td><td><b>Pool de threads partagé</b></td>
+      <td>Instancié une seule fois pour le processus (voir encadré ci-dessous).</td></tr>
+  </tbody>
+</table>
+
+<p>
+  Trois optimisations complémentaires ont été appliquées dans les
+  <strong>couches communes</strong> — <code>torch.inference_mode()</code> (+16 % sur
+  l'inférence), mise en cache des clients S3 et Elasticsearch, et passage du
+  <em>translog</em> Elasticsearch en mode asynchrone (+21 % sur les écritures).
+  Elles bénéficient aux <strong>deux</strong> endpoints et ne faussent donc pas la
+  comparaison.
+</p>
+
+<div class="box warn">
+  <span class="lbl">Un bug de performance découvert par la mesure</span>
+  <p>
+    Une première campagne a révélé que <code>/ingest_fast</code> était
+    <strong>plus lent</strong> que <code>/ingest</code> sur un batch de 1
+    (−16 %). L'analyse a identifié deux causes, toutes deux issues de notre propre
+    code : le pool de threads était <strong>recréé à chaque requête</strong>, et
+    l'indexation <em>bulk</em> déclenchait un <code>refresh</code> séparé, soit deux
+    allers-retours HTTP au lieu d'un. Après correction (pool partagé,
+    <code>refresh</code> intégré à la requête <em>bulk</em>), le gain à N=1 est
+    redevenu positif. <strong>Sans mesure systématique, une « optimisation » qui
+    dégrade les performances serait passée inaperçue.</strong>
+  </p>
+</div>
+
+<h2>8.3 Protocole de mesure</h2>
+<ol>
+  <li><strong>Warm-up</strong> — le modèle (~500 Mo) est chargé paresseusement à la
+    première inférence (~25 s). Deux appels préalables l'excluent de la mesure.</li>
+  <li><strong>Textes uniques</strong> — chaque répétition emploie des textes
+    distincts, afin qu'aucun cache ne favorise l'endpoint exécuté en second.</li>
+  <li><strong>Alternance et médiane</strong> — l'ordre d'exécution est inversé à
+    chaque répétition ; la médiane, robuste aux valeurs aberrantes, est préférée à
+    la moyenne.</li>
+  <li><strong>Mesure côté serveur</strong> — le chronomètre entoure le pipeline
+    lui-même, hors sérialisation JSON et latence réseau.</li>
+</ol>
+
+<h2>8.4 Résultats</h2>
+
+<figure>
+  <img src="../screenshots/Synthese Benchmark.PNG" alt="Synthèse du benchmark">
+  <figcaption><b>Figure 14</b> — Synthèse du benchmark. L'objectif de 30 % est atteint sur
+    <strong>toutes</strong> les tailles de batch, l'équivalence fonctionnelle étant
+    vérifiée à chaque mesure.</figcaption>
+</figure>
+
+<table>
+  <thead>
+    <tr><th class="num">Batch</th><th class="num"><code>/ingest</code></th>
+        <th class="num"><code>/ingest_fast</code></th><th class="num">Gain</th>
+        <th class="num">Accélération</th><th>Équivalence</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="num">1</td><td class="num">0,1614 s</td><td class="num">0,1100 s</td><td class="num ok">+31,8 %</td><td class="num">×1,5</td><td>OK</td></tr>
+    <tr><td class="num">2</td><td class="num">0,2175 s</td><td class="num">0,1176 s</td><td class="num ok">+45,9 %</td><td class="num">×1,8</td><td>OK</td></tr>
+    <tr><td class="num">5</td><td class="num">0,4755 s</td><td class="num">0,1745 s</td><td class="num ok">+63,3 %</td><td class="num">×2,7</td><td>OK</td></tr>
+    <tr><td class="num">10</td><td class="num">0,9927 s</td><td class="num">0,2567 s</td><td class="num ok">+74,1 %</td><td class="num">×3,9</td><td>OK</td></tr>
+    <tr><td class="num">25</td><td class="num">2,3459 s</td><td class="num">0,5000 s</td><td class="num ok">+78,7 %</td><td class="num">×4,7</td><td>OK</td></tr>
+    <tr><td class="num">50</td><td class="num">4,9024 s</td><td class="num">0,8950 s</td><td class="num ok">+81,7 %</td><td class="num">×5,5</td><td>OK</td></tr>
+    <tr><td class="num"><b>100</b></td><td class="num">10,0249 s</td><td class="num">1,6840 s</td><td class="num ok"><b>+83,2 %</b></td><td class="num"><b>×6,0</b></td><td>OK</td></tr>
+  </tbody>
+</table>
+
+<h2>8.5 Analyse : pourquoi le gain croît avec la taille du batch</h2>
+<p>
+  La progression du gain (+31,8 % à N=1, +83,2 % à N=100) n'est pas fortuite : elle
+  est la signature directe de la <strong>loi d'Amdahl</strong>. Le profilage du
+  pipeline sur un texte unique en donne la clé :
+</p>
+
+<table>
+  <thead><tr><th>Étape</th><th class="num">Temps médian</th><th>Compressible à N=1 ?</th></tr></thead>
+  <tbody>
+    <tr><td>Indexation Elasticsearch (1 document)</td><td class="num">≈ 56 ms</td><td class="bad">Non — un aller-retour HTTP incompressible</td></tr>
+    <tr><td>Inférence RoBERTa (1 texte)</td><td class="num">≈ 46 ms</td><td class="bad">Non — coût fixe du modèle</td></tr>
+    <tr><td>Écriture S3 (zone RAW)</td><td class="num">≈ 12 ms</td><td class="ok">Oui — recouverte par le calcul</td></tr>
+    <tr><td>Divers</td><td class="num">≈ 4 ms</td><td>Marginal</td></tr>
+  </tbody>
+</table>
+
+<p>
+  Sur un texte unique, environ <strong>90 % du temps est un coût fixe</strong> que ni
+  le <em>batching</em> ni le parallélisme ne peuvent réduire : il n'y a qu'un texte à
+  traiter et qu'un document à écrire. L'accélération est donc <strong>bornée par la
+  fraction non parallélisable</strong> du travail. À mesure que le batch grandit,
+  cette fraction devient marginale et le gain converge vers un facteur 6.
+</p>
+<p>
+  Le résultat à N=1 (+31,8 %) est par ailleurs le plus <strong>variable</strong> d'une
+  campagne à l'autre — nous avons mesuré des valeurs comprises entre +15 % et +32 %.
+  C'est cohérent : les écarts y sont de l'ordre de quelques dizaines de
+  millisecondes, donc très sensibles au bruit de mesure. Le cas d'usage réel d'une
+  API d'ingestion étant le traitement par lots, c'est sur ce régime que la solution
+  doit être jugée — et le gain y est massif et stable.
+</p>
+
+<h2>8.6 Une optimisation testée puis rejetée : la quantification int8</h2>
+<p>
+  Pour tenter de réduire le coût fixe du modèle, nous avons évalué la
+  <strong>quantification dynamique int8</strong> (remplacement des poids flottants
+  32 bits par des entiers 8 bits sur les couches linéaires). Les mesures ont été
+  sans appel :
+</p>
+<ul>
+  <li><strong>Vitesse</strong> : environ <strong>2,5 fois plus lente</strong>
+    (111 ms contre 43 ms sur un texte) — les noyaux int8 de PyTorch ne sont pas
+    optimisés pour cette architecture CPU ;</li>
+  <li><strong>Fidélité</strong> : seulement <strong>85,5 %</strong> d'accord de
+    labels avec le modèle d'origine, l'écart de score atteignant 0,70.</li>
+</ul>
+<p>
+  L'optimisation a donc été <strong>écartée : plus lente et moins fidèle</strong>.
+  Nous la documentons délibérément, car une démarche d'ingénierie se juge autant à
+  ce qu'elle rejette, sur preuves, qu'à ce qu'elle retient.
+</p>
+
+<h2>8.7 Pourquoi Numba n'a pas été retenu</h2>
+<p>
+  Le sujet suggère Numba, qui compile en code machine les boucles Python opérant sur
+  des tableaux NumPy. Le profilage montre qu'il serait ici <strong>sans effet</strong> :
+  le goulot d'étranglement n'est pas une boucle numérique en Python, mais
+  <strong>(a)</strong> l'inférence d'un réseau de neurones — déjà exécutée par le
+  noyau C++/ATen optimisé de PyTorch — et <strong>(b)</strong> les entrées/sorties
+  réseau vers S3 et Elasticsearch. Optimiser ce qui n'est pas le goulot
+  d'étranglement ne produit aucun gain. Nous avons donc ciblé le
+  <strong>batching</strong> et le <strong>parallélisme d'I/O</strong>, là où le temps
+  se trouve réellement.
+</p>
+
+<!-- ===================== 9. DIFFICULTÉS ===================== -->
+<h1>9. Difficultés rencontrées et résolues</h1>
+
+<p>
+  Ces incidents, tous diagnostiqués et corrigés, illustrent la réalité de la mise au
+  point d'une chaîne de données.
+</p>
+
+<table>
+  <thead><tr><th style="width:26%">Difficulté</th><th style="width:34%">Diagnostic</th><th>Résolution</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>Fermeture de l'API Reddit</b></td>
+      <td>La plateforme a supprimé la création d'applications <em>legacy</em> en cours de projet.</td>
+      <td>Bascule vers Hacker News. Grâce au découplage de la couche d'ingestion, <b>un seul fichier</b> a été modifié.</td>
+    </tr>
+    <tr>
+      <td><b>Conflit de DLL sous Windows</b></td>
+      <td>PyTorch et PyArrow embarquent chacun un runtime OpenMP (<code>libiomp5md.dll</code>). Chargé en second, PyTorch échoue à initialiser <code>c10.dll</code>. Hypothèse validée par test d'inversion de l'ordre d'import.</td>
+      <td>Module dédié <code>torch_first.py</code>, importé en tête des points d'entrée, qui rend la contrainte <b>explicite et documentée</b> plutôt qu'implicite.</td>
+    </tr>
+    <tr>
+      <td><b>Permissions du volume Airflow</b></td>
+      <td>Le volume de cache du modèle était créé sous <code>root</code>, alors qu'Airflow s'exécute sous l'UID 50000 → <code>PermissionError</code>.</td>
+      <td><code>chown</code> du répertoire dans l'image, Docker initialisant le volume avec le propriétaire du dossier de l'image.</td>
+    </tr>
+    <tr>
+      <td><b>Dépendances et Python 3.13</b></td>
+      <td>Absence de <em>wheels</em> précompilés pour une version de Python très récente.</td>
+      <td>Montée de version ciblée de <code>pyarrow</code> et <code>numba</code>.</td>
+    </tr>
+    <tr>
+      <td><b><code>bulk</code> plus lent que l'indexation unitaire</b></td>
+      <td>Sur un batch de 1, notre <code>bulk_index</code> (74 ms) dépassait <code>es.index</code> (56 ms) : un <code>refresh</code> séparé provoquait deux allers-retours HTTP.</td>
+      <td><code>refresh=True</code> intégré à la requête <em>bulk</em>.</td>
+    </tr>
+    <tr>
+      <td><b>Effet de bord global</b></td>
+      <td>L'accesseur du modèle appelait <code>torch.set_grad_enabled(False)</code>, mutant l'état de <b>tout le processus</b>.</td>
+      <td>Remplacement par un <code>torch.inference_mode()</code> de portée locale, au moment du calcul.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ===================== 10. LIMITES ===================== -->
+<h1>10. Limites et perspectives</h1>
+
+<h2>10.1 Le modèle est monolingue</h2>
+<div class="box warn">
+  <span class="lbl">Limite identifiée en test</span>
+  <p>
+    Le modèle <code>twitter-roberta-base-sentiment-latest</code> est entraîné sur des
+    tweets <strong>en anglais</strong>. Soumis à des textes français, il les classe
+    systématiquement en <em>neutral</em> avec un score proche de zéro : il n'y
+    détecte aucun signal (visible en figure 13). Ce n'est pas un défaut du pipeline
+    — qui traite correctement le texte — mais une <strong>limite du modèle
+    choisi</strong>, à connaître avant tout déploiement sur des données
+    francophones.
+  </p>
+  <p>
+    <strong>Correction possible :</strong> substituer
+    <code>cardiffnlp/twitter-xlm-roberta-base-sentiment</code>, variante
+    multilingue du même modèle. L'architecture le permet <strong>sans aucune
+    modification de code</strong> : le nom du modèle est une variable
+    d'environnement (<code>SENTIMENT_MODEL</code>).
+  </p>
+</div>
+
+<h2>10.2 Autres limites et pistes d'évolution</h2>
+<table>
+  <thead><tr><th style="width:32%">Limite</th><th>Piste d'amélioration</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>Re-traitement intégral en staging</b></td>
+      <td>Le pipeline RAW→STAGING relit l'ensemble de la zone brute à chaque cycle.
+        Acceptable à cette volumétrie, mais coûteux à l'échelle. Un traitement
+        <em>incrémental</em> (ne lire que les partitions postérieures au dernier
+        instantané) serait la suite naturelle.</td>
+    </tr>
+    <tr>
+      <td><b>Absence de tests automatisés</b></td>
+      <td>La validation a été empirique (exécution réelle de chaque étape). Une suite
+        <code>pytest</code> couvrant les normaliseurs et le nettoyage sécuriserait les
+        évolutions futures.</td>
+    </tr>
+    <tr>
+      <td><b>Sécurité désactivée</b></td>
+      <td>Elasticsearch tourne sans authentification et l'API est ouverte : acceptable
+        pour un déploiement local, à proscrire en production (TLS, authentification,
+        secrets gérés hors <code>.env</code>).</td>
+    </tr>
+    <tr>
+      <td><b>Inférence sur CPU</b></td>
+      <td>Le débit plafonne à environ 60 textes/seconde. Un portage GPU ou un modèle
+        distillé (<em>DistilRoBERTa</em>) offrirait un ordre de grandeur
+        supplémentaire.</td>
+    </tr>
+    <tr>
+      <td><b>Aucune couche de visualisation</b></td>
+      <td>Les données curated se prêtent naturellement à un tableau de bord Kibana
+        (évolution du sentiment dans le temps, détection de signaux faibles).</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ===================== 11. CONCLUSION ===================== -->
+<h1>11. Conclusion</h1>
+
+<p>
+  Le data lake réalisé couvre l'intégralité du périmètre demandé, niveau avancé
+  compris. Deux sources hétérogènes sont ingérées, unifiées dans un schéma commun,
+  enrichies par un modèle de Deep Learning atteignant <strong>75,6 % de
+  précision</strong>, puis exposées via neuf endpoints. L'ensemble est orchestré par
+  Airflow, entièrement conteneurisé, et démarre par une commande unique. L'endpoint
+  optimisé atteint <strong>+83,2 % de gain</strong> (×6,0), très au-delà des 30 %
+  exigés, avec une équivalence fonctionnelle vérifiée à chaque mesure.
+</p>
+
+<p>
+  Au-delà des livrables, ce projet aura surtout été l'occasion d'appliquer une
+  <strong>méthode</strong>. À chaque obstacle — précision décevante de VADER, gain
+  insuffisant à faible batch, régression de performance inattendue, conflit de
+  bibliothèques — la même séquence a été suivie : <em>mesurer, comprendre, décider,
+  documenter</em>. C'est cette discipline qui a permis d'identifier un bug de
+  performance dans notre propre code d'optimisation, de rejeter la quantification
+  int8 sur preuves plutôt que par principe, et d'assumer les limites du modèle au
+  lieu de les dissimuler.
+</p>
+
+<div class="box key">
+  <span class="lbl">Ce que le projet démontre</span>
+  <p>
+    Un data lake ne se juge pas seulement à l'empilement de ses technologies, mais à
+    la <strong>rigueur des décisions</strong> qui les relient — et à la capacité à
+    prouver, chiffres à l'appui, que chacune était la bonne.
+  </p>
+</div>
+
+<figure>
+  <img src="../screenshots/Git log.PNG" alt="Historique Git">
+  <figcaption><b>Figure 15</b> — Historique du dépôt : un commit par phase, du
+    <em>scaffolding</em> aux correctifs de performance.</figcaption>
+</figure>
+
+<!-- ===================== ANNEXES ===================== -->
+<h1>Annexe A — Installation et build</h1>
+
+<h2>Prérequis</h2>
+<ul>
+  <li>Docker Desktop (Compose v2) — environ 6 Go de RAM et 5 Go de disque</li>
+</ul>
+
+<h2>Démarrage complet</h2>
+<div class="ascii">cp .env.example .env
+docker compose up -d --build</div>
+
+<p>Au premier lancement, la construction des images et le téléchargement du modèle
+  (~500 Mo, mis en cache ensuite) requièrent quelques minutes.</p>
+
+<table>
+  <thead><tr><th style="width:32%">Service</th><th style="width:34%">URL</th><th>Identifiants</th></tr></thead>
+  <tbody>
+    <tr><td>API (documentation)</td><td><code>http://localhost:8000/docs</code></td><td>—</td></tr>
+    <tr><td>Airflow</td><td><code>http://localhost:8080</code></td><td><code>admin</code> / <code>admin</code></td></tr>
+    <tr><td>MinIO (console)</td><td><code>http://localhost:9001</code></td><td><code>minioadmin</code> / <code>minioadmin123</code></td></tr>
+    <tr><td>Elasticsearch</td><td><code>http://localhost:9200</code></td><td>—</td></tr>
+  </tbody>
+</table>
+
+<h2>Alimenter le lac</h2>
+<p>Le DAG s'exécute automatiquement toutes les heures. Déclenchement immédiat :</p>
+<div class="ascii">docker exec dl_airflow_scheduler airflow dags trigger datalake_pipeline</div>
+
+<h2>Rejouer le benchmark</h2>
+<div class="ascii">python -m venv .venv &amp;&amp; .venv\Scripts\activate
+pip install -r requirements.txt
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+python scripts/benchmark.py --sizes 1 2 5 10 25 50 100</div>
+<p>Le script régénère <code>docs/performance.md</code> avec les mesures obtenues.</p>
+
+<h1>Annexe B — Structure du dépôt</h1>
+
+<div class="ascii">src/
+  common/          code transverse
+    config.py      configuration centralisée (variables d'environnement)
+    s3_client.py   accès MinIO / S3 (zones raw et staging)
+    es_client.py   accès Elasticsearch (zone curated)
+    nlp.py         nettoyage de texte + moteurs de sentiment (VADER, RoBERTa)
+    torch_first.py contournement du conflit de DLL Windows
+  ingestion/
+    hackernews_api.py    source API
+    load_dataset.py      source fichier (HuggingFace)
+  transform/
+    raw_to_staging.py       nettoyage + unification des schémas
+    staging_to_curated.py   scoring de sentiment + indexation + évaluation
+  api/
+    main.py        endpoints FastAPI
+    ingest.py      pipeline d'ingestion à la demande (naïf et optimisé)
+
+airflow/dags/
+  datalake_dag.py  DAG d'orchestration
+
+docker/            Dockerfiles Airflow et API
+scripts/
+  benchmark.py     campagne de mesure (génère docs/performance.md)
+docs/
+  architecture.md  documentation technique
+  performance.md   résultats de performance (généré)</div>
+
+<p style="margin-top:26px; text-align:center; color:var(--muted); font-size:9pt;">
+  Code source complet, documentation technique et résultats détaillés dans le dépôt
+  du projet.
+</p>
