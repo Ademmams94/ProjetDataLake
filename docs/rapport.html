@@ -15,21 +15,24 @@
     text-align: justify; hyphens: auto;
   }
 
-  /* ---------- Page de garde ---------- */
-  .cover { height: 252mm; display:flex; flex-direction:column;
-           justify-content:center; text-align:center; page-break-after: always; }
+  /* ---------- Page de garde ----------
+     Mise en page en BLOC (et non en flex) : un conteneur flex à hauteur fixe
+     est mal fragmenté par le moteur d'impression et déborde sur la page
+     suivante. Un simple padding-top centre le contenu de façon fiable. */
+  .cover { text-align:center; padding-top:48mm;
+           page-break-after: always; break-after: page; }
   .cover .school { font-size:11pt; letter-spacing:.16em; text-transform:uppercase;
                    color:var(--muted); }
   .cover .rule { width:70px; height:3px; background:var(--accent);
                  margin:22px auto 26px; }
   .cover h1 { font-size:27pt; line-height:1.22; margin:0 0 10px; color:var(--accent);
-              border:0; padding:0; }
+              border:0; padding:0; page-break-before: avoid; }
   .cover .sub { font-size:13pt; color:var(--muted); margin-bottom:44px; }
   .cover .meta { font-size:11pt; line-height:1.9; }
   .cover .meta strong { color:var(--accent); }
-  .badges { margin-top:38px; display:flex; gap:8px; justify-content:center;
-            flex-wrap:wrap; }
-  .badge { border:1px solid var(--line); border-radius:20px; padding:4px 13px;
+  .badges { margin-top:38px; }
+  .badge { display:inline-block; border:1px solid var(--line); border-radius:20px;
+           padding:4px 13px; margin:3px 2px;
            font-size:8.5pt; color:var(--muted); background:#fbfcfe; }
 
   /* ---------- Titres ---------- */
@@ -75,7 +78,8 @@
   figcaption b { color:var(--ink); font-style:normal; }
 
   /* ---------- Sommaire ---------- */
-  .toc { page-break-after: always; }
+  .toc { page-break-before: always; break-before: page;
+         page-break-after: always; break-after: page; }
   .toc ol { list-style:none; padding-left:0; counter-reset:s; }
   .toc > ol > li { counter-increment:s; padding:6px 0;
                    border-bottom:1px dotted var(--line); font-weight:600; }
